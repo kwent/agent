@@ -237,13 +237,17 @@ func (e *DockerComposeExecutor) startBashSession() int {
 	log.Debug("Starting stateful shell")
 
 	executable, args := e.composeExecutableAndArgs()
+	// Drop the upstream `--rm` flag. With the Docker zfs storage driver,
+	// `--rm` races `zfs destroy` against the still-mounted overlay and
+	// fails ~5% of jobs with "dataset is busy". Leaving the container
+	// around for `compose down` (in Cleanup()) avoids the race — by
+	// then the process has fully exited and all mounts are released.
 	args = append(args,
 		"--ansi",
 		"never",
 		"-f",
 		e.dockerComposeManifestPath,
 		"run",
-		"--rm",
 		"--name",
 		e.mainContainerName,
 		"-v",
