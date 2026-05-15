@@ -24,11 +24,9 @@ func ConstructDockerComposeFile(conf api.Compose, exposeKvmDevice bool, fileInje
 }
 
 func (f *DockerComposeFile) Construct() string {
-	dockerCompose := ""
-	dockerCompose += "version: \"2.0\"\n"
-	dockerCompose += "\n"
-
-	dockerCompose += "services:\n"
+	// `version:` is obsolete in modern docker compose (v2.x) and emits a
+	// noisy WARN line on every job. Drop it — schema validates without.
+	dockerCompose := "services:\n"
 
 	main, rest := f.configuration.Containers[0], f.configuration.Containers[1:]
 
