@@ -52,8 +52,12 @@ func NewDockerComposeExecutor(request *api.JobRequest, logger *eventlogger.Logge
 		exposeKvmDevice:           options.ExposeKvmDevice,
 		fileInjections:            options.FileInjections,
 		FailOnMissingFiles:        options.FailOnMissingFiles,
-		dockerComposeManifestPath: "/tmp/docker-compose.yml",
-		tmpDirectory:              "/tmp/agent-temp-directory", // make a better random name
+		// Per-PID paths so multiple Semaphore agents on the same host
+		// don't race on /tmp/agent-temp-directory or /tmp/docker-compose.yml
+		// when they run jobs concurrently. Upstream uses fixed paths and
+		// leaves a TODO comment about "make a better random name".
+		dockerComposeManifestPath: fmt.Sprintf("/tmp/docker-compose-%d.yml", os.Getpid()),
+		tmpDirectory:              fmt.Sprintf("/tmp/agent-temp-directory-%d", os.Getpid()),
 
 		// during testing the name main gets taken up, if we make it random we avoid headaches
 		mainContainerName: request.Compose.Containers[0].Name,
