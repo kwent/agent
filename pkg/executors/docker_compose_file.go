@@ -77,16 +77,26 @@ func (f *DockerComposeFile) Service(container api.Container) string {
 	return result
 }
 
+// ServiceWithLinks builds the main service entry plus any side-cars.
+//
+// The legacy compose `links:` field is intentionally NOT emitted:
+// Podman rejects `HostConfig.Links` with "bad parameter: link is not
+// supported", and on Docker the sibling-service DNS that `links:`
+// used to provide is already covered by Compose's default project
+// network (every service gets a DNS-resolvable hostname for free).
+// Dropping `links:` makes the generated YAML runtime-agnostic.
+//
+// Pin upstream DNS on every service so the container can resolve
+// public hosts (github.com, gem fetch, etc.) without depending on
+// the host's systemd-resolved stub at 127.0.0.53, which is
+// unreachable from the container netns on Hetzner Robot images.
 func (f *DockerComposeFile) ServiceWithLinks(c api.Container, links []api.Container) string {
 	result := f.Service(c)
 
-	if len(links) > 0 {
-		result += "    links:\n"
-
-		for _, link := range links {
-			result += fmt.Sprintf("      - %s\n", link.Name)
-		}
-	}
+	result += "    dns:\n"
+	result += "      - 1.1.1.1\n"
+	result += "      - 8.8.8.8\n"
+	result += "      - 9.9.9.9\n"
 
 	if len(f.fileInjections) > 0 {
 		result += "    volumes:\n"

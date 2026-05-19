@@ -36,15 +36,15 @@ func Test__DockerComposeFileConstruction(t *testing.T) {
 		},
 	}
 
-	expected := `version: "2.0"
-
-services:
+	expected := `services:
   main:
     image: ruby:2.6
     devices:
       - "/dev/kvm:/dev/kvm"
-    links:
-      - db
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
 
   db:
     image: postgres:9.6
